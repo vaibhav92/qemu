@@ -15,55 +15,39 @@ static inline TCGv_ptr gen_avr_ptr(int reg)
 }
 
 #define GEN_VR_LDX(name, opc2, opc3)                                          \
-static void glue(gen_, name)(DisasContext *ctx)                                       \
+static void glue(gen_, name)(DisasContext *ctx)                               \
 {                                                                             \
     TCGv EA;                                                                  \
+    TCGv_i32 t0;                                                              \
     if (unlikely(!ctx->altivec_enabled)) {                                    \
         gen_exception(ctx, POWERPC_EXCP_VPU);                                 \
         return;                                                               \
     }                                                                         \
     gen_set_access_type(ctx, ACCESS_INT);                                     \
     EA = tcg_temp_new();                                                      \
+    t0 = tcg_const_i32(rD(ctx->opcode));                                      \
     gen_addr_reg_index(ctx, EA);                                              \
-    tcg_gen_andi_tl(EA, EA, ~0xf);                                            \
-    /* We only need to swap high and low halves. gen_qemu_ld64 does necessary \
-       64-bit byteswap already. */                                            \
-    if (ctx->le_mode) {                                                       \
-        gen_qemu_ld64(ctx, cpu_avrl[rD(ctx->opcode)], EA);                    \
-        tcg_gen_addi_tl(EA, EA, 8);                                           \
-        gen_qemu_ld64(ctx, cpu_avrh[rD(ctx->opcode)], EA);                    \
-    } else {                                                                  \
-        gen_qemu_ld64(ctx, cpu_avrh[rD(ctx->opcode)], EA);                    \
-        tcg_gen_addi_tl(EA, EA, 8);                                           \
-        gen_qemu_ld64(ctx, cpu_avrl[rD(ctx->opcode)], EA);                    \
-    }                                                                         \
+    gen_helper_lvx(cpu_env, t0, EA);                                          \
     tcg_temp_free(EA);                                                        \
+    tcg_temp_free_i32(t0);                                                    \
 }
 
 #define GEN_VR_STX(name, opc2, opc3)                                          \
 static void gen_st##name(DisasContext *ctx)                                   \
 {                                                                             \
     TCGv EA;                                                                  \
+    TCGv_i32 t0;                                                              \
     if (unlikely(!ctx->altivec_enabled)) {                                    \
         gen_exception(ctx, POWERPC_EXCP_VPU);                                 \
         return;                                                               \
     }                                                                         \
     gen_set_access_type(ctx, ACCESS_INT);                                     \
     EA = tcg_temp_new();                                                      \
+    t0 = tcg_const_i32(rD(ctx->opcode));                                      \
     gen_addr_reg_index(ctx, EA);                                              \
-    tcg_gen_andi_tl(EA, EA, ~0xf);                                            \
-    /* We only need to swap high and low halves. gen_qemu_st64 does necessary \
-       64-bit byteswap already. */                                            \
-    if (ctx->le_mode) {                                                       \
-        gen_qemu_st64(ctx, cpu_avrl[rD(ctx->opcode)], EA);                    \
-        tcg_gen_addi_tl(EA, EA, 8);                                           \
-        gen_qemu_st64(ctx, cpu_avrh[rD(ctx->opcode)], EA);                    \
-    } else {                                                                  \
-        gen_qemu_st64(ctx, cpu_avrh[rD(ctx->opcode)], EA);                    \
-        tcg_gen_addi_tl(EA, EA, 8);                                           \
-        gen_qemu_st64(ctx, cpu_avrl[rD(ctx->opcode)], EA);                    \
-    }                                                                         \
+    gen_helper_stvx(cpu_env, t0, EA);                                         \
     tcg_temp_free(EA);                                                        \
+    tcg_temp_free_i32(t0);                                                    \
 }
 
 #define GEN_VR_LVE(name, opc2, opc3, size)                              \
@@ -116,9 +100,9 @@ GEN_VR_LVE(bx, 0x07, 0x00, 1);
 GEN_VR_LVE(hx, 0x07, 0x01, 2);
 GEN_VR_LVE(wx, 0x07, 0x02, 4);
 
-GEN_VR_STX(svx, 0x07, 0x07);
+GEN_VR_STX(vx, 0x07, 0x07);
 /* As we don't emulate the cache, stvxl is stricly equivalent to stvx */
-GEN_VR_STX(svxl, 0x07, 0x0F);
+GEN_VR_STX(vxl, 0x07, 0x0F);
 
 GEN_VR_STVE(bx, 0x07, 0x04, 1);
 GEN_VR_STVE(hx, 0x07, 0x05, 2);

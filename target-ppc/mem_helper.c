@@ -225,6 +225,66 @@ target_ulong helper_lscbx(CPUPPCState *env, target_ulong addr, uint32_t reg,
 #define LO_IDX 0
 #endif
 
+void helper_lvx(CPUPPCState *env, uint32_t vr, target_ulong addr)
+{
+    uintptr_t raddr = GETPC();
+    ppc_avr_t *haddr;
+
+    /* Align address */
+    addr &= ~(target_ulong)0xf;
+
+    /* Try fast path translate */
+    haddr = tlb_vaddr_to_host(env, addr, MMU_DATA_LOAD, env->dmmu_idx);
+    if (haddr) {
+        if (msr_le && HI_IDX) {
+            memcpy(&env->avr[vr], haddr, 16);
+        } else {
+            env->avr[vr].u64[LO_IDX] = bswap64(haddr->u64[HI_IDX]);
+            env->avr[vr].u64[HI_IDX] = bswap64(haddr->u64[LO_IDX]);
+        }
+    } else {
+        if (needs_byteswap(env)) {
+            env->avr[vr].u64[LO_IDX] =
+                bswap64(cpu_ldq_data_ra(env, addr, raddr));
+            env->avr[vr].u64[HI_IDX] =
+                bswap64(cpu_ldq_data_ra(env, addr + 8, raddr));
+        } else {
+            env->avr[vr].u64[HI_IDX] = cpu_ldq_data_ra(env, addr, raddr);
+            env->avr[vr].u64[LO_IDX] = cpu_ldq_data_ra(env, addr + 8, raddr);
+        }
+    }
+}
+
+void helper_stvx(CPUPPCState *env, uint32_t vr, target_ulong addr)
+{
+    uintptr_t raddr = GETPC();
+    ppc_avr_t *haddr;
+
+    /* Align address */
+    addr &= ~(target_ulong)0xf;
+
+    /* Try fast path translate */
+    haddr = tlb_vaddr_to_host(env, addr, MMU_DATA_STORE, env->dmmu_idx);
+    if (haddr) {
+        if (msr_le && HI_IDX) {
+            memcpy(haddr, &env->avr[vr], 16);
+        } else {
+            haddr->u64[LO_IDX] = bswap64(env->avr[vr].u64[HI_IDX]);
+            haddr->u64[HI_IDX] = bswap64(env->avr[vr].u64[LO_IDX]);
+        }
+    } else {
+        if (needs_byteswap(env)) {
+            cpu_stq_data_ra(env, addr,
+                            bswap64(env->avr[vr].u64[LO_IDX]), raddr);
+            cpu_stq_data_ra(env, addr + 8,
+                            bswap64(env->avr[vr].u64[HI_IDX]), raddr);
+        } else {
+            cpu_stq_data_ra(env, addr, env->avr[vr].u64[HI_IDX], raddr);
+            cpu_stq_data_ra(env, addr + 8, env->avr[vr].u64[LO_IDX], raddr);
+        }
+    }
+}
+
 /* We use msr_le to determine index ordering in a vector.  However,
    byteswapping is not simply controlled by msr_le.  We also need to take
    into account endianness of the target.  This is done for the little-endian
