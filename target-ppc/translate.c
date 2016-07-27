@@ -2868,8 +2868,6 @@ static void gen_lmw(DisasContext *ctx)
     TCGv t0;
     TCGv_i32 t1;
     gen_set_access_type(ctx, ACCESS_INT);
-    /* NIP cannot be restored if the memory exception comes from an helper */
-    gen_update_nip(ctx, ctx->nip - 4);
     t0 = tcg_temp_new();
     t1 = tcg_const_i32(rD(ctx->opcode));
     gen_addr_imm_index(ctx, t0, 0);
@@ -2884,8 +2882,6 @@ static void gen_stmw(DisasContext *ctx)
     TCGv t0;
     TCGv_i32 t1;
     gen_set_access_type(ctx, ACCESS_INT);
-    /* NIP cannot be restored if the memory exception comes from an helper */
-    gen_update_nip(ctx, ctx->nip - 4);
     t0 = tcg_temp_new();
     t1 = tcg_const_i32(rS(ctx->opcode));
     gen_addr_imm_index(ctx, t0, 0);
@@ -4108,8 +4104,6 @@ static void gen_icbi(DisasContext *ctx)
 {
     TCGv t0;
     gen_set_access_type(ctx, ACCESS_CACHE);
-    /* NIP cannot be restored if the memory exception comes from an helper */
-    gen_update_nip(ctx, ctx->nip - 4);
     t0 = tcg_temp_new();
     gen_addr_reg_index(ctx, t0);
     gen_helper_icbi(cpu_env, t0);
