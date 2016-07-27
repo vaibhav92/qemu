@@ -5497,8 +5497,6 @@ static void gen_mfdcr(DisasContext *ctx)
     TCGv dcrn;
 
     CHK_SV;
-    /* NIP cannot be restored if the memory exception comes from an helper */
-    gen_update_nip(ctx, ctx->nip - 4);
     dcrn = tcg_const_tl(SPR(ctx->opcode));
     gen_helper_load_dcr(cpu_gpr[rD(ctx->opcode)], cpu_env, dcrn);
     tcg_temp_free(dcrn);
@@ -5514,8 +5512,6 @@ static void gen_mtdcr(DisasContext *ctx)
     TCGv dcrn;
 
     CHK_SV;
-    /* NIP cannot be restored if the memory exception comes from an helper */
-    gen_update_nip(ctx, ctx->nip - 4);
     dcrn = tcg_const_tl(SPR(ctx->opcode));
     gen_helper_store_dcr(cpu_env, dcrn, cpu_gpr[rS(ctx->opcode)]);
     tcg_temp_free(dcrn);
@@ -5530,8 +5526,6 @@ static void gen_mfdcrx(DisasContext *ctx)
     GEN_PRIV;
 #else
     CHK_SV;
-    /* NIP cannot be restored if the memory exception comes from an helper */
-    gen_update_nip(ctx, ctx->nip - 4);
     gen_helper_load_dcr(cpu_gpr[rD(ctx->opcode)], cpu_env,
                         cpu_gpr[rA(ctx->opcode)]);
     /* Note: Rc update flag set leads to undefined state of Rc0 */
@@ -5546,8 +5540,6 @@ static void gen_mtdcrx(DisasContext *ctx)
     GEN_PRIV;
 #else
     CHK_SV;
-    /* NIP cannot be restored if the memory exception comes from an helper */
-    gen_update_nip(ctx, ctx->nip - 4);
     gen_helper_store_dcr(cpu_env, cpu_gpr[rA(ctx->opcode)],
                          cpu_gpr[rS(ctx->opcode)]);
     /* Note: Rc update flag set leads to undefined state of Rc0 */
@@ -5557,8 +5549,6 @@ static void gen_mtdcrx(DisasContext *ctx)
 /* mfdcrux (PPC 460) : user-mode access to DCR */
 static void gen_mfdcrux(DisasContext *ctx)
 {
-    /* NIP cannot be restored if the memory exception comes from an helper */
-    gen_update_nip(ctx, ctx->nip - 4);
     gen_helper_load_dcr(cpu_gpr[rD(ctx->opcode)], cpu_env,
                         cpu_gpr[rA(ctx->opcode)]);
     /* Note: Rc update flag set leads to undefined state of Rc0 */
@@ -5567,8 +5557,6 @@ static void gen_mfdcrux(DisasContext *ctx)
 /* mtdcrux (PPC 460) : user-mode access to DCR */
 static void gen_mtdcrux(DisasContext *ctx)
 {
-    /* NIP cannot be restored if the memory exception comes from an helper */
-    gen_update_nip(ctx, ctx->nip - 4);
     gen_helper_store_dcr(cpu_env, cpu_gpr[rA(ctx->opcode)],
                          cpu_gpr[rS(ctx->opcode)]);
     /* Note: Rc update flag set leads to undefined state of Rc0 */
