@@ -586,22 +586,51 @@ static void glue(gen_, name)(DisasContext * ctx)            \
 VSX_XXMRG(xxmrghw, 1)
 VSX_XXMRG(xxmrglw, 0)
 
-
 static void gen_xxextractuw(DisasContext * ctx)
 {
+    TCGv_i64 vsrtl, vsrb;
+    TCGv_i64 b, b2;
+    uint64_t uim, index, mask, shift;
 
-    TCGv_i32 opc;                               \
-    
+    uim = UIM2(ctx->opcode);
+
     if (unlikely(!ctx->vsx_enabled)) {
         gen_exception(ctx, POWERPC_EXCP_VSXU);
         return;
     }
 
-    opc = tcg_const_i32(ctx->opcode);                                         \
+    if (unlikely(uim) > 12) {
+        gen_exception(ctx, POWERPC_EXCP_VSXU);
+        return;
+    }
 
+    vsrtl = cpu_vsrl(xT(ctx->opcode));
+    b = tcg_temp_new_i64();
+    tcg_gen_movi_i64(b, 0);
 
-    printf("Hello World\n");
+    for (index = uim; index < (uim + 4); ++index) {
+        b2 = tcg_temp_new_i64();
+        mask = 0xFF;
 
+        if (index > 7) {
+            vsrb = cpu_vsrh(xB(ctx->opcode));
+            shift = (index - 8) * 8;
+        } else {
+            vsrb = cpu_vsrl(xB(ctx->opcode));
+            shift = index * 8;
+        }
+        mask <<= shift;
+        tcg_gen_andi_i64(b2, vsrb, mask);
+        tcg_gen_shri_i64(b2, b2, shift - (index - uim));
+        tcg_gen_or_i64(b, b, b2);
+        tcg_temp_free_i64(b2);
+    }
+
+    tcg_gen_mov_i64(vsrtl, b);
+    /* move 0 to upper word */
+    tcg_gen_movi_i64(cpu_vsrh(xT(ctx->opcode)), 0);
+
+    tcg_temp_free_i64(b);
 }
 
 static void gen_xxsel(DisasContext * ctx)

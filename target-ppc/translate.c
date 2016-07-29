@@ -589,6 +589,7 @@ EXTRACT_HELPER(DM, 8, 2);
 EXTRACT_HELPER(UIM, 16, 2);
 EXTRACT_HELPER(SHW, 8, 2);
 EXTRACT_HELPER(SP, 19, 2);
+EXTRACT_HELPER(UIM2, 16, 4);
 /*****************************************************************************/
 /* PowerPC instructions table                                                */
 
