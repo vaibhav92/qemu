@@ -586,6 +586,24 @@ static void glue(gen_, name)(DisasContext * ctx)            \
 VSX_XXMRG(xxmrghw, 1)
 VSX_XXMRG(xxmrglw, 0)
 
+
+static void gen_xxextractuw(DisasContext * ctx)
+{
+
+    TCGv_i32 opc;                               \
+    
+    if (unlikely(!ctx->vsx_enabled)) {
+        gen_exception(ctx, POWERPC_EXCP_VSXU);
+        return;
+    }
+
+    opc = tcg_const_i32(ctx->opcode);                                         \
+
+
+    printf("Hello World\n");
+
+}
+
 static void gen_xxsel(DisasContext * ctx)
 {
     TCGv_i64 a, b, c;
